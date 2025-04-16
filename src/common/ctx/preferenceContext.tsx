@@ -1,5 +1,6 @@
 import { createContext, ReactNode, useContext, useEffect, useMemo, useState } from 'react';
 import { getPreference, PreferenceResponse, updatePreference } from '../../actions/preferences';
+import { useAuth } from './authContext';
 
 
 type PreferencesContextType = {
@@ -11,9 +12,9 @@ const PreferenceContext = createContext<PreferencesContextType | undefined>(unde
 
 export const PreferenceProvider = ({ children }: { children: ReactNode }) => {
     const [preference, setPreference] = useState<PreferenceResponse | null>(null);
-
+    const { token } = useAuth();
     useEffect(() => {
-
+        if (!token) return setPreference(null);
         const fetchPrefs = async () => {
             try {
                 const data = await getPreference();
@@ -23,8 +24,19 @@ export const PreferenceProvider = ({ children }: { children: ReactNode }) => {
             }
         };
         fetchPrefs();
-    }, []);
+    }, [token]);
 
+    useEffect(() => {
+        if (!preference) return;
+
+        const root = window.document.documentElement;
+
+        if (preference.theme === 'dark') {
+            root.classList.add('dark');
+        } else {
+            root.classList.remove('dark');
+        }
+    }, [preference?.theme]);
 
     const update = async (newPrefs: Partial<PreferenceResponse>) => {
         if (!preference) return;
