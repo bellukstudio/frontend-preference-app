@@ -1,9 +1,12 @@
-#RUN PROGRAM 
+## RUN PROGRAM 
 ```
 $ npm install
 $ npm run start
 ```
-
+## ENV
+```
+VITE_API_URL=http://localhost:8000
+```
 # React + TypeScript + Vite
 
 This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
