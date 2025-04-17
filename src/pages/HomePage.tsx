@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { usePreferences } from "../common/ctx/preferenceContext";
 import Navbar from "../components/Navbar";
-import { askClaude } from "../common/utils/claudeApi";
+import { parseCommand } from "../common/utils/claudeParser";
 
 export default function HomePage() {
     const { preference, update } = usePreferences();
@@ -12,34 +12,32 @@ export default function HomePage() {
         if (!input.trim()) return;
 
         const userMessage = input.trim();
-        setMessages((prev) => [...prev, { sender: "user", text: userMessage }]);
+        setMessages([...messages, { sender: "user", text: userMessage }]);
         setInput("");
 
         try {
-            const claudeReply = await askClaude(userMessage);
-            let parsed: any;
+            const parsed = parseCommand(userMessage);
 
-            try {
-                parsed = JSON.parse(claudeReply);
-                update(parsed);
-                setMessages((prev) => [...prev, { sender: "claude", text: "Preferensi berhasil diperbarui" }]);
-            } catch (error) {
+            if (Object.keys(parsed).length === 0) {
                 setMessages((prev) => [
                     ...prev,
-                    { sender: "claude", text: claudeReply || "Claude tidak memahami perintah" }
+                    { sender: "claude", text: "Maaf, saya tidak mengerti perintah itu 😅" },
                 ]);
+                return;
             }
-        } catch (error) {
+
+            await update(parsed);
             setMessages((prev) => [
                 ...prev,
-                {
-                    sender: "claude", text: "Terjadi kesalahan saat memproses perintah"
-                }
+                { sender: "claude", text: "Preferensi kamu berhasil diperbarui! ✅" },
+            ]);
+        } catch (err) {
+            setMessages((prev) => [
+                ...prev,
+                { sender: "claude", text: "Terjadi kesalahan saat memproses perintah 😥" },
             ]);
         }
     };
-
-
     if (!preference) return <p className="mx-auto text-center">Loading preferences...</p>;
     return (
         <>
@@ -49,9 +47,7 @@ export default function HomePage() {
                     {messages.map((msg, i) => (
                         <div
                             key={i}
-                            className={`text-sm p-2 rounded ${msg.sender === "user"
-                                ? "bg-blue-100 dark:bg-blue-900 text-right"
-                                : "bg-gray-200 dark:bg-gray-700"
+                            className={`text-sm p-2 rounded ${msg.sender === "user" ? "bg-blue-100 dark:bg-blue-900 text-right" : "bg-gray-200 dark:bg-gray-700"
                                 }`}
                         >
                             {msg.text}
